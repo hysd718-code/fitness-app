@@ -1,0 +1,815 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f8f4ec">
+<title>产后核心修复</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: { extend: {
+    colors: {
+      sage: {50:'#f3f6f2',100:'#e4ebe2',200:'#c8d6c5',300:'#a7bda3',400:'#86a382',500:'#6b8a67',600:'#557052',700:'#455a43',800:'#384837'},
+      cream:'#f8f4ec', sand:'#efe7d8', clay:'#c98b6b', ink:'#33402f'
+    },
+    fontFamily: { sans: ['"Noto Sans SC"','system-ui','-apple-system','sans-serif'] }
+  }}
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  body{background:#f8f4ec;color:#33402f;-webkit-tap-highlight-color:transparent}
+  .card{background:#fffdf8;border-radius:1.25rem;box-shadow:0 1px 2px rgba(60,70,50,.05),0 6px 24px rgba(60,70,50,.06);border:1px solid #efe7d8}
+  .chip{border:1px solid #c8d6c5;border-radius:999px;padding:.45rem .9rem;font-size:.875rem;background:#fff;transition:all .15s}
+  .chip.on{background:#6b8a67;color:#fff;border-color:#6b8a67}
+  .btn{border-radius:999px;padding:.75rem 1.25rem;font-weight:500;transition:transform .1s, background .15s}
+  .btn:active{transform:scale(.97)}
+  input[type=range]{accent-color:#6b8a67;width:100%}
+  .nav-btn.active{color:#455a43}
+  .nav-btn.active .dot{opacity:1}
+  .fade{animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .ring-bg{stroke:#e4ebe2}.ring-fg{stroke:#6b8a67;transition:stroke-dashoffset .3s linear}
+  .safe-bottom{padding-bottom:calc(env(safe-area-inset-bottom) + 5.5rem)}
+</style>
+</head>
+<body class="font-sans min-h-screen">
+
+<!-- Header -->
+<header class="max-w-3xl mx-auto px-4 pt-6 pb-2 flex items-center justify-between">
+  <div>
+    <p class="text-sm text-sage-500" id="todayLabel"></p>
+    <h1 class="text-2xl font-bold text-ink">核心修复 · 每日一练</h1>
+  </div>
+  <div class="text-right">
+    <p class="text-xs text-sage-500">连续打卡</p>
+    <p class="text-2xl font-bold text-sage-600"><span id="streakTop">0</span><span class="text-sm font-normal"> 天</span></p>
+    <button id="syncBadge" class="text-[11px] text-sage-500 mt-0.5">☁️ 未开启同步</button>
+  </div>
+</header>
+
+<main class="max-w-3xl mx-auto px-4 safe-bottom">
+
+  <!-- ================= HOME ================= -->
+  <section id="tab-home" class="tab space-y-4 fade">
+    <div class="card p-5" id="planCard"></div>
+
+    <div class="card p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="font-bold">本周计划</h2>
+        <span class="text-xs text-sage-500">工作日 10 分钟 · 周末 30 分钟</span>
+      </div>
+      <div class="grid grid-cols-7 gap-1.5" id="weekStrip"></div>
+    </div>
+
+    <div class="card p-5" id="morningCard"></div>
+
+    <div class="card p-5 bg-sand/40">
+      <h2 class="font-bold mb-2">⚠️ 出现以下情况请暂停训练并就医</h2>
+      <ul class="text-sm space-y-1 text-ink/80 list-disc pl-5">
+        <li>腰痛向腿部放射，伴麻木、无力</li>
+        <li>会阴/鞍区麻木，或突然出现排尿、排便控制障碍</li>
+        <li>夜间静息痛、发热、不明原因体重下降</li>
+        <li>漏尿、下坠感明显加重 → 建议找盆底康复物理治疗师（西班牙：fisioterapeuta de suelo pélvico，可经家庭医生转介）</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ================= COACH ================= -->
+  <section id="tab-coach" class="tab space-y-4 hidden fade">
+    <div class="card p-5">
+      <h2 class="font-bold mb-1">今天身体感觉如何？</h2>
+      <p class="text-xs text-sage-500 mb-3">点选后查看解剖学解释与调整建议</p>
+      <div class="flex flex-wrap gap-2" id="feelChips"></div>
+    </div>
+    <div class="card p-5">
+      <h2 class="font-bold mb-3">常见疑问</h2>
+      <div class="flex flex-wrap gap-2" id="faqChips"></div>
+    </div>
+    <div id="coachOut" class="space-y-4"></div>
+    <p class="text-xs text-sage-500 px-1">说明：教练回复来自预设的规则库（基于下方标注的指南与研究），并非实时 AI，也不能替代医生或物理治疗师的面诊。</p>
+  </section>
+
+  <!-- ================= PROGRESS ================= -->
+  <section id="tab-progress" class="tab space-y-4 hidden fade">
+    <div class="grid grid-cols-3 gap-3" id="statCards"></div>
+
+    <div class="card p-5">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="font-bold">本周活动量</h2>
+        <span class="text-xs text-sage-500">WHO 建议：每周 ≥150 分钟中等强度</span>
+      </div>
+      <div id="weekVolume"></div>
+      <div class="flex flex-wrap gap-2 mt-3 items-center">
+        <span class="text-sm text-ink/70">记录其他活动（推车快走等）：</span>
+        <button class="chip" data-extra="10">+10 分钟</button>
+        <button class="chip" data-extra="20">+20 分钟</button>
+        <button class="chip" data-extra="30">+30 分钟</button>
+      </div>
+    </div>
+
+    <div class="card p-5">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="font-bold">晨起疼痛趋势（近 14 天）</h2>
+        <div class="flex gap-3 text-xs">
+          <span class="flex items-center gap-1"><i class="inline-block w-3 h-1 rounded bg-clay"></i>肩颈</span>
+          <span class="flex items-center gap-1"><i class="inline-block w-3 h-1 rounded bg-sage-500"></i>腰部</span>
+        </div>
+      </div>
+      <div id="chart" class="w-full"></div>
+      <p class="text-xs text-sage-500 mt-2">评分采用 0–10 数字评分法（NRS）：0 = 不痛，10 = 能想象的最痛。临床上通常认为下降约 2 分或 30% 有实际意义。</p>
+    </div>
+
+    <div class="card p-5" id="tensCard"></div>
+
+    <div class="card p-5" id="syncCard">
+      <div class="flex items-center justify-between mb-1">
+        <h2 class="font-bold">☁️ GitHub 云同步</h2>
+        <span id="syncStatus" class="text-xs text-sage-500">未开启</span>
+      </div>
+      <p class="text-xs text-sage-500 mb-4">数据保存在你自己的<b>私有</b>仓库里（一个 JSON 文件）。每台设备填写同样的设置即可共享打卡与评分。</p>
+      <div class="grid grid-cols-2 gap-3 text-sm">
+        <label class="col-span-1">GitHub 用户名<input id="sOwner" class="mt-1 w-full rounded-xl border border-sand px-3 py-2 bg-white" placeholder="例如 lisa-xxx" autocomplete="off"></label>
+        <label class="col-span-1">私有数据仓库名<input id="sRepo" class="mt-1 w-full rounded-xl border border-sand px-3 py-2 bg-white" placeholder="fitness-data" autocomplete="off"></label>
+        <label class="col-span-1">文件名<input id="sPath" class="mt-1 w-full rounded-xl border border-sand px-3 py-2 bg-white" value="fitness-data.json" autocomplete="off"></label>
+        <label class="col-span-1">分支（可留空）<input id="sBranch" class="mt-1 w-full rounded-xl border border-sand px-3 py-2 bg-white" placeholder="默认分支" autocomplete="off"></label>
+        <label class="col-span-2">访问令牌（Fine-grained token）<input id="sToken" type="password" class="mt-1 w-full rounded-xl border border-sand px-3 py-2 bg-white" placeholder="github_pat_…" autocomplete="off"></label>
+      </div>
+      <div class="flex flex-wrap gap-2 mt-4">
+        <button id="sSave" class="btn bg-sage-600 text-white !py-2">保存并同步</button>
+        <button id="sNow" class="btn bg-sage-100 text-sage-700 !py-2">立即同步</button>
+        <button id="sOff" class="btn bg-white border border-sand text-clay !py-2">在本设备断开</button>
+      </div>
+      <p class="text-xs text-ink/60 mt-3 leading-relaxed">🔒 令牌只保存在本设备浏览器中。请只授权这一个数据仓库、只开 Contents 读写权限，并设置有效期；令牌泄露时到 GitHub 设置里撤销即可。</p>
+    </div>
+
+    <div class="card p-5">
+      <h2 class="font-bold mb-3">训练记录</h2>
+      <div id="history" class="space-y-2 text-sm"></div>
+      <button id="resetBtn" class="mt-4 text-xs text-clay underline">清空全部本地数据</button>
+    </div>
+  </section>
+</main>
+
+<!-- Bottom nav -->
+<nav class="fixed bottom-0 inset-x-0 bg-cream/95 backdrop-blur border-t border-sand z-30" style="padding-bottom:env(safe-area-inset-bottom)">
+  <div class="max-w-3xl mx-auto grid grid-cols-3">
+    <button class="nav-btn active py-3 flex flex-col items-center text-sage-400" data-tab="home"><span class="text-xl">🌿</span><span class="text-xs mt-0.5">今日</span><i class="dot opacity-0 w-1 h-1 rounded-full bg-sage-600 mt-1"></i></button>
+    <button class="nav-btn py-3 flex flex-col items-center text-sage-400" data-tab="coach"><span class="text-xl">💬</span><span class="text-xs mt-0.5">教练</span><i class="dot opacity-0 w-1 h-1 rounded-full bg-sage-600 mt-1"></i></button>
+    <button class="nav-btn py-3 flex flex-col items-center text-sage-400" data-tab="progress"><span class="text-xl">📈</span><span class="text-xs mt-0.5">进度</span><i class="dot opacity-0 w-1 h-1 rounded-full bg-sage-600 mt-1"></i></button>
+  </div>
+</nav>
+
+<!-- ================= SESSION OVERLAY ================= -->
+<div id="session" class="fixed inset-0 bg-cream z-40 hidden overflow-y-auto">
+  <div class="max-w-2xl mx-auto px-4 pt-5 pb-10">
+    <div class="flex items-center justify-between">
+      <button id="exitBtn" class="text-sm text-sage-600">✕ 结束</button>
+      <p class="text-sm text-sage-600" id="sessStep"></p>
+      <p class="text-sm text-sage-600" id="sessTotal"></p>
+    </div>
+    <div class="h-1.5 bg-sage-100 rounded-full mt-3 overflow-hidden"><div id="sessBar" class="h-full bg-sage-500 transition-all"></div></div>
+
+    <div class="flex flex-col items-center mt-6">
+      <div class="relative w-52 h-52">
+        <svg viewBox="0 0 120 120" class="w-full h-full -rotate-90">
+          <circle cx="60" cy="60" r="52" fill="none" stroke-width="8" class="ring-bg"/>
+          <circle id="ring" cx="60" cy="60" r="52" fill="none" stroke-width="8" stroke-linecap="round" class="ring-fg" stroke-dasharray="326.73" stroke-dashoffset="0"/>
+        </svg>
+        <div class="absolute inset-0 flex flex-col items-center justify-center">
+          <p id="sessTime" class="text-5xl font-bold tabular-nums">0:00</p>
+          <p id="sessState" class="text-xs text-sage-500 mt-1"></p>
+        </div>
+      </div>
+      <h2 id="exName" class="text-xl font-bold mt-5 text-center"></h2>
+      <p id="exEquip" class="text-xs text-sage-500 mt-1"></p>
+      <button id="altBtn" class="chip mt-3 hidden"></button>
+    </div>
+
+    <div class="card p-5 mt-5">
+      <h3 class="font-bold text-sm mb-2">动作要点</h3>
+      <ol id="exCues" class="text-sm space-y-1.5 list-decimal pl-5"></ol>
+    </div>
+    <div class="card p-5 mt-3 bg-sage-50">
+      <h3 class="font-bold text-sm mb-1">🦴 解剖学依据</h3>
+      <p id="exAnat" class="text-sm text-ink/80 leading-relaxed"></p>
+    </div>
+    <p id="nextUp" class="text-sm text-sage-600 mt-4 text-center"></p>
+
+    <div class="flex items-center justify-center gap-4 mt-6">
+      <button id="prevBtn" class="btn bg-white border border-sage-200 w-14 h-14 !p-0">⏮</button>
+      <button id="playBtn" class="btn bg-sage-600 text-white w-20 h-20 !p-0 text-2xl">▶</button>
+      <button id="nextBtn" class="btn bg-white border border-sage-200 w-14 h-14 !p-0">⏭</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= FINISH MODAL ================= -->
+<div id="finish" class="fixed inset-0 bg-black/30 z-50 hidden flex items-end md:items-center justify-center">
+  <div class="card w-full md:max-w-md p-6 rounded-b-none md:rounded-b-[1.25rem] fade">
+    <p class="text-3xl">🌱</p>
+    <h2 class="text-xl font-bold mt-1" id="finishTitle">完成！</h2>
+    <p class="text-sm text-ink/70 mt-1" id="finishSub"></p>
+    <p class="font-medium mt-4 mb-2 text-sm">练完感觉如何？（可多选）</p>
+    <div class="flex flex-wrap gap-2" id="finishChips"></div>
+    <button id="finishSave" class="btn bg-sage-600 text-white w-full mt-5">保存打卡并查看教练反馈</button>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   动作库：cues = 动作要点；anatomy = 解剖学/研究依据；alt = 低强度备选
+   ============================================================ */
+const EX = {
+  breath:{name:'腹式呼吸 + 凯格尔协同',equip:'瑜伽垫',cues:[
+    '仰卧屈膝，双脚与髋同宽；骨盆中立：腰下留出约一掌薄的自然空隙，不刻意压平',
+    '吸气约 4 秒：肋骨向两侧和后方扩张，腹部自然鼓起，盆底放松、轻微下沉',
+    '呼气约 6 秒：先轻提盆底（同时“憋尿 + 憋气”向上提），再感到下腹向内、向上收紧',
+    '用力约 30–50%；肩、臀、大腿放松，全程不憋气'],
+    anatomy:'横膈膜与盆底像活塞的上下两端：吸气时二者一起下降，呼气时一起上提。研究发现盆底肌与腹横肌存在协同收缩（Sapsford 等，2001），在呼气起始先收紧，可在腹压升高前给腰盆“上锁”。',alt:null},
+  catcow:{name:'猫牛式',equip:'瑜伽垫',cues:[
+    '四点跪：手在肩正下方，膝在髋正下方',
+    '吸气（牛）：尾骨上翘，胸骨向前送，目光略向前',
+    '呼气（猫）：从尾骨开始逐节卷背，轻收下腹与盆底',
+    '每轮 6–8 秒，只在无痛范围内活动'],
+    anatomy:'脊柱分节段地屈伸，同时练习骨盆前倾/后倾的控制。能主动前后倾，才能稳定地停在“中立位”——这是后续所有核心动作的前提。',alt:null},
+  openbook:{name:'侧卧开书式（胸椎旋转）',equip:'瑜伽垫（膝间可夹毛巾卷）',cues:[
+    '侧卧，屈髋屈膝约 90°，膝间夹毛巾卷固定骨盆',
+    '双臂前伸合掌；呼气时上方手臂画弧向后打开，目光跟随手',
+    '胸口转向天花板，停 2 次呼吸后返回',
+    '每侧约 45 秒，计时过半时换边'],
+    anatomy:'屈膝夹物锁住骨盆和腰椎，让旋转主要发生在胸椎。腰椎单个节段的轴向旋转仅约 1–2°，胸椎明显更大（White & Panjabi 脊柱生物力学数据）——胸椎够灵活，腰椎就不必代偿去拧。',alt:null},
+  birddog:{name:'鸟狗式',equip:'瑜伽垫',cues:[
+    '四点跪，骨盆中立，想象背上放着一杯水',
+    '呼气先启动盆底 + 腹横肌，再缓慢伸出对侧手与脚，至与躯干平齐即可',
+    '停 3–5 秒后收回，左右交替',
+    '骨盆不旋转、腰不下塌；抬得低但稳，优于抬得高但晃'],
+    anatomy:'对侧手脚伸展形成交叉的抗旋转负荷，激活多裂肌、臀大肌和腹壁肌群。McGill 的实验室研究显示该动作的腰椎负荷相对较低，是其“Big 3”核心稳定训练之一。研究还发现腰痛人群的腹横肌启动存在延迟（Hodges & Richardson，1996）。',alt:'quadslide'},
+  quadslide:{name:'四点跪单腿后滑（低强度）',equip:'瑜伽垫',cues:[
+    '四点跪，手保持不动',
+    '呼气，单腿沿垫面向后滑直，脚尖不离地',
+    '吸气滑回，左右交替；骨盆不晃'],
+    anatomy:'去掉手臂支撑变化和抬腿的重量，力臂缩短、抗旋转需求降低，适合腰部不适时保持“动起来”。',alt:null},
+  neck:{name:'颈部与胸小肌拉伸',equip:'门框或墙角',cues:[
+    '坐/站高：下巴水平向后收（做“双下巴”），5 次',
+    '右手扶头左侧，轻带右耳靠向右肩，30 秒；换边 30 秒',
+    '手肘 90° 贴门框，身体前移至胸前外侧有牵拉感，约 40 秒',
+    '牵拉强度“舒适的紧”，出现麻、放射痛立即停止'],
+    anatomy:'胸小肌附着于肩胛骨喙突，张力高时可使肩胛前倾；上斜方肌和肩胛提肌在低头喂奶、抱娃、看手机时常持续收缩。拉伸带来的多为短期放松，需配合上背力量训练（周末的弹力带划船）才更持久。',alt:null},
+  downdog:{name:'下犬式流瑜伽',equip:'瑜伽垫',cues:[
+    '四点跪→脚趾踩地，呼气把臀部向上、向后推',
+    '膝盖可以弯：优先背部延长，而不是脚跟落地',
+    '吸气向前回到平板/四点跪方向，呼气再推回下犬，6–8 轮',
+    '可在下犬中交替屈膝“踏步”放松小腿'],
+    anatomy:'双手闭链承重激活前锯肌与肩袖，同时拉长小腿和腘绳肌。屈膝是关键：腘绳肌紧时硬伸直腿，会把骨盆拉向后倾，使弯曲转嫁到腰椎。',alt:'puppy'},
+  puppy:{name:'小狗式 / 扶墙下犬（低强度）',equip:'瑜伽垫或墙面',cues:[
+    '四点跪，臀部保持在膝盖正上方',
+    '双手向前走，胸口缓慢沉向垫面，额头可着地',
+    '或站立双手扶墙，后退至背部与地面平行'],
+    anatomy:'去除手腕与肩的大部分承重，保留上背与肩前侧的延展，适合疲劳或手腕不适时。',alt:null},
+  bridge:{name:'臀桥（臀肌唤醒）',equip:'瑜伽垫，可选弹力带',cues:[
+    '仰卧屈膝，脚跟距臀部约一掌',
+    '呼气：先盆底 + 腹横肌，轻微骨盆后倾，再推脚跟抬髋至肩-髋-膝一线',
+    '顶端夹臀 2 秒，不要用腰拱得更高；吸气慢慢落下',
+    '进阶：膝上套弹力带并向外轻撑，10–12 次/组'],
+    anatomy:'臀大肌是主要的伸髋肌。若臀肌参与不足，伸髋常由竖脊肌和腘绳肌代偿，表现为“腰酸、臀不酸”。先后倾骨盆再抬起，能减少腰椎伸展代偿。',alt:'pelvictilt'},
+  pelvictilt:{name:'仰卧骨盆后倾（低强度）',equip:'瑜伽垫',cues:[
+    '仰卧屈膝',
+    '呼气：腰背轻压地面（骨盆后倾），同时轻提盆底',
+    '吸气回中立；幅度很小，慢速'],
+    anatomy:'低负荷练习腰盆控制，适合腰部敏感时保持活动。',alt:null},
+  rdl:{name:'哑铃罗马尼亚硬拉（髋铰链）',equip:'一对轻哑铃',cues:[
+    '双手持哑铃于大腿前，脚与髋同宽，膝微屈',
+    '吸气：臀部向后推，哑铃贴腿下滑至膝下或大腿后侧拉紧',
+    '背部始终平直；呼气先收盆底腹横肌，再用臀部发力站直，顶端不后仰',
+    '8–10 次/组，组间休息 30–45 秒'],
+    anatomy:'髋铰链＝用髋关节的屈伸代替腰椎弯曲，正是从地上抱娃、捡玩具的动作模式。哑铃贴腿可缩短力臂，降低腰椎伸肌需要产生的力矩。',alt:'hingewall'},
+  hingewall:{name:'徒手靠墙髋铰链（低强度）',equip:'墙面，可选伸展带',cues:[
+    '背对墙约一脚长站立，双手放在髋前折处',
+    '臀部向后找墙，碰到即站回',
+    '可将伸展带竖贴后背，检查后脑-胸椎-骶骨三点不离带'],
+    anatomy:'无负重练习动作模式，先建立“折髋不弯腰”的感觉。',alt:null},
+  row:{name:'坐姿弹力带划船（强化上背）',equip:'弹力带',cues:[
+    '坐垫上，腿伸直或微屈，弹力带绕过脚掌',
+    '坐高，肋骨不外翻',
+    '呼气：先把肩胛向后、向下收，再屈肘把带拉至肋旁，停 2 秒',
+    '缓慢放回，12–15 次/组'],
+    anatomy:'强化中、下斜方肌与菱形肌，与胸小肌拉伸形成“前侧放松 + 后侧强化”的组合，对抗长期抱娃、低头带来的前倾负荷。',alt:'pullapart'},
+  pullapart:{name:'仰卧弹力带拉开（低强度）',equip:'弹力带',cues:[
+    '仰卧屈膝，双手握带于胸前伸直',
+    '呼气：双臂向两侧拉开至带碰胸，肩胛压向地面',
+    '吸气缓慢还原'],
+    anatomy:'仰卧时地面支撑脊柱，去除坐姿维持躯干的腰部负荷，同时保留上背训练。',alt:null},
+  deadbug:{name:'死虫式',equip:'瑜伽垫',cues:[
+    '仰卧，屈髋屈膝 90°，双臂指向天花板',
+    '呼气先启动核心，腰保持中立并与地面轻接触',
+    '对侧手脚缓慢伸向远处，脚跟悬于地面上方',
+    '吸气回中，交替；一旦腰拱起就缩小幅度'],
+    anatomy:'训练四肢活动时保持腰盆稳定（抗伸展），腹横肌与腹内外斜肌协同工作；与卷腹相比，腰椎反复屈曲更少。',alt:'heelslide'},
+  heelslide:{name:'仰卧脚跟滑动（低强度）',equip:'瑜伽垫',cues:[
+    '仰卧屈膝',
+    '呼气启动核心，单侧脚跟沿垫面滑出至腿伸直',
+    '吸气滑回，左右交替；骨盆不晃'],
+    anatomy:'脚跟始终有支撑，腹壁只需抵抗很小的力矩。',alt:null},
+  sideplank:{name:'跪姿侧桥',equip:'瑜伽垫',cues:[
+    '侧卧，肘在肩正下方，双膝屈 90°',
+    '呼气抬髋，使头-髋-膝成一直线',
+    '每次保持约 10 秒，重复；每侧约 90 秒，计时过半换边',
+    '肩不耸，髋不后坐'],
+    anatomy:'主要锻炼腰方肌与腹斜肌，是 McGill “Big 3” 之一。单侧抱娃时躯干需要抵抗侧屈，侧桥直接训练这一能力。',alt:'clam'},
+  clam:{name:'侧卧蚌式（低强度）',equip:'瑜伽垫，可选弹力带',cues:[
+    '侧卧屈膝，脚跟并拢',
+    '骨盆不向后翻，上侧膝盖缓慢打开再合上',
+    '每侧约 45 秒，可在膝上套弹力带'],
+    anatomy:'激活臀中肌，改善单腿支撑和“顶胯抱娃”时的骨盆稳定。',alt:null},
+  strap:{name:'伸展带腘绳肌拉伸 + 仰卧扭转',equip:'瑜伽伸展带',cues:[
+    '仰卧，伸展带套一侧脚掌，伸直腿抬起至大腿后侧中等牵拉；另一腿屈膝踩地',
+    '每侧 30 秒',
+    '再双膝倒向一侧，双肩贴地，每侧 30 秒'],
+    anatomy:'腘绳肌起于坐骨结节，过紧时前屈易拉骨盆后倾、增加腰椎屈曲。仰卧位拉伸比站立体前屈更容易保持腰椎中立。',alt:null},
+  relax:{name:'深度放松（仰卧或婴儿式）',equip:'瑜伽垫，可在膝下垫枕',cues:[
+    '仰卧膝下垫枕，或婴儿式',
+    '回到腹式呼吸：吸 4 秒、呼 6 秒（约每分钟 6 次）',
+    '从脚到头逐段放松'],
+    anatomy:'慢呼吸、延长呼气与副交感神经活动增强、心率变异性升高相关（Zaccaro 等，2018 系统综述）。',alt:null}
+};
+
+const PLANS = {
+  weekday:{title:'工作日 · 10 分钟微习惯',minutes:10,items:[['breath',120],['catcow',90],['openbook',90],['birddog',180],['neck',120]]},
+  weekend:{title:'周末 · 30 分钟深度修复',minutes:30,items:[['breath',120],['catcow',120],['downdog',210],['bridge',210],['rdl',210],['row',210],['deadbug',180],['sideplank',180],['strap',120],['relax',240]]}
+};
+
+/* ============================================================
+   教练规则库
+   ============================================================ */
+const FEELINGS = {
+  back_ache:{label:'腰部有点酸',title:'腰部酸感',
+    explain:'训练后的轻度酸胀（不是刺痛）较常见。若“腰酸而臀不酸”，多见于臀桥、鸟狗时骨盆前倾或肋骨外翻，腰椎伸肌代替臀肌完成伸髋。',
+    action:['臀桥：先做骨盆后倾再抬，抬到肩-髋-膝一线就停','鸟狗：手脚只抬到与躯干平齐，停住时检查骨盆是否转动','明天训练时对酸的动作点“换低强度”','酸感 48 小时内应明显减轻'],
+    evidence:'Hodges & Richardson（1996, Spine）：腰痛人群腹横肌启动延迟；Hayden 等（2021, Cochrane）：运动疗法对慢性腰痛有中等程度的止痛效果（约 15/100 分）。'},
+  back_sharp:{label:'腰痛加重/刺痛',title:'腰痛加重',flag:true,
+    explain:'刺痛、锐痛或活动中突然加重，提示该动作负荷超出当前耐受，应停止，而不是“忍过去”。',
+    action:['今天只做腹式呼吸、骨盆后倾等无痛动作','之后几天所有带备选的动作都换低强度','若伴随腿部放射痛、麻木无力、排尿排便异常 → 尽快就医','1–2 周无改善 → 找物理治疗师评估'],
+    evidence:'NICE NG59（2016）腰痛指南：推荐结构化运动治疗，同时需排查危险信号（red flags）。'},
+  neck_relief:{label:'肩颈松快多了',title:'肩颈放松',
+    explain:'练后的松快感主要来自温和活动增加局部血流、降低肌肉张力与疼痛敏感度。这种效果偏短期，规律重复才能累积。',
+    action:['保持工作日 2 分钟颈部与胸小肌拉伸','周末的弹力带划船不要省——上背力量让放松更持久','可在晨起评分里观察趋势是否持续下降'],
+    evidence:'Gross 等（Cochrane, 2015）：针对颈部/肩胛的运动对机械性颈痛有效，证据等级为低到中等。'},
+  neck_tight:{label:'肩颈仍然紧',title:'肩颈仍紧',
+    explain:'晨起颈紧常与睡姿、枕头高度、夜间抱哄孩子的姿势有关。研究对“姿势不良直接导致颈痛”的结论并不一致，因此更重要的是“经常变换姿势 + 规律运动”，而非追求某个完美姿势。',
+    action:['起床后先做 1 分钟下巴后收 + 缓慢转头','白天每隔一段时间（经验建议 45–60 分钟）站起来活动肩胛','检查枕头：侧睡时颈椎应与胸椎大致一条直线','可在练后用 TENS 于肩颈后侧 15 分钟（见“进度”页注意事项）'],
+    evidence:'姿势与颈痛关系的系统综述结论不一致；运动对颈痛的支持见 Gross 等（2015）。'},
+  leak:{label:'漏尿/下坠感',title:'盆底症状',flag:true,
+    explain:'产后 2 年仍有漏尿或下坠感，值得专业评估。盆底肌训练（PFMT）对女性尿失禁有效，但前提是收缩方式正确。',
+    action:['训练中避免憋气用力：发力阶段始终呼气','咳嗽、打喷嚏、抱娃前先“预收缩”盆底（The Knack 技巧）','预约盆底康复物理治疗师做指检评估（西班牙可经家庭医生转介）','症状评估前暂不加大跳跃、负重'],
+    evidence:'Dumoulin 等（Cochrane, 2018）：PFMT 可治愈或改善女性尿失禁；Bump 等（1991）：仅凭口头指导，约一半女性未能正确收缩盆底肌。'},
+  tired:{label:'很累，没动力',title:'疲惫与动力',
+    explain:'带娃期睡眠不足很常见，这时目标是“不断链”，而不是“练到位”。习惯的关键是同一情境下的重复。',
+    action:['今天只做 2 分钟腹式呼吸，也算打卡','把训练绑定在固定节点（如孩子午睡后）','不要用周末“补”工作日，按计划来'],
+    evidence:'Lally 等（2010）：习惯形成所需时间中位数约 66 天，个体差异 18–254 天，偶尔漏一次不影响习惯形成。'}
+};
+
+const FAQ = {
+  carry:{label:'抱娃时怎么发力不伤腰？',title:'抱娃发力',
+    explain:'核心原则是缩短力臂：孩子离身体越远，腰椎伸肌需产生的力矩越大。',
+    action:['从地上抱起：蹲下或髋铰链（臀向后推），把孩子拉近胸前，呼气 + 盆底预收缩，再用腿站起','抱着时让孩子贴近身体中线，避免长时间挎在一侧“顶胯”','经常换手；时间长时用背带分担','起身前先转动双脚，而不是只扭腰'],
+    evidence:'诚实说明：Verbeek 等（Cochrane）发现单纯的搬抬技术培训对预防腰痛证据不足；但“负荷靠近身体降低腰部力矩”是确定的力学事实，配合力量训练（臀桥、硬拉、侧桥）更有意义。'},
+  tens:{label:'TENS 电疗仪什么时候用最好？',title:'TENS / EMS 使用',
+    explain:'TENS 主要通过刺激感觉神经产生短期止痛效果；EMS 引起肌肉收缩，但不能替代主动训练。',
+    action:['时机：练后放松时或疼痛明显时，每次约 15–30 分钟，从最低强度起调到“明显但舒适的麻感”','位置：电极贴在疼痛区域两侧（肩颈后侧/腰背），不跨脊柱正中骨突','禁止：颈前及侧方（颈动脉窦、喉部）、胸前后对穿心脏、破损或麻木皮肤、头部','不宜使用：心脏起搏器/植入式设备、怀孕、癫痫（未经医生同意）'],
+    evidence:'NICE NG59（2016）：不推荐 TENS 用于腰痛治疗；Cochrane 对慢性腰痛的 TENS 证据也不一致。所以它可以作为“舒适辅助”，但不能代替运动。'},
+  kegel:{label:'怎么确认凯格尔做对了？',title:'盆底收缩自检',
+    explain:'正确收缩是“向上、向内提”，而不是向下用力。',
+    action:['想象同时憋住小便和排气，向上提起','腹部、臀部、大腿不应明显用力，不憋气','可在镜前观察会阴部应向内上收，而非向外鼓出','不建议在排尿中途练习“中断尿流”'],
+    evidence:'Bump 等（1991）：仅口头指导后约一半女性收缩不理想，部分人反而在向下用力。最可靠的是物理治疗师指检评估。'},
+  enough:{label:'每天 10 分钟够吗？',title:'训练量是否足够',
+    explain:'作为“启动习惯”足够；作为长期健康的总活动量还不够。',
+    action:['本计划每周约 110 分钟（5×10 + 2×30）','WHO 建议包括产后女性在内的成人每周 150–300 分钟中等强度有氧，并每周≥2 天力量训练','差额可用推婴儿车快走补足——在“进度”页记录','习惯稳定（约 2–3 个月）后再加量'],
+    evidence:'WHO《身体活动和久坐行为指南》（2020）；ACOG 委员会意见 804（2020）：产后可逐步恢复运动。'},
+  morning:{label:'为什么晨起肩颈特别紧？',title:'晨起肩颈紧',
+    explain:'夜间长时间固定姿势、枕头不合适、夜醒哄娃时的扭转姿势都可能参与。晨僵通常起床后 30 分钟内缓解；若晨僵持续超过 1 小时、伴多关节肿痛，应就医排查炎症性疾病。',
+    action:['起床后先做下巴后收 + 缓慢转头 1 分钟','记录晨起评分，观察 2–4 周趋势','评分持续不降或上升 → 物理治疗师评估'],
+    evidence:'持续较久的晨僵是炎症性关节病的提示特征之一，属于需排查的情况。'},
+  doctor:{label:'什么情况必须看医生？',title:'就医信号',flag:true,
+    explain:'以下情况不适合自行训练处理：',
+    action:['腰痛放射到腿，伴麻木、无力','鞍区麻木或排尿排便控制障碍（需急诊）','夜间静息痛、发热、不明原因消瘦','漏尿/下坠感明显加重','疼痛 6 周以上无改善'],
+    evidence:'NICE NG59（2016）对腰痛危险信号的建议。'}
+};
+
+/* ============================================================
+   存储与工具函数
+   ============================================================ */
+const store = {
+  get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+};
+let logs = store.get('pp_logs',{});   // { 'YYYY-MM-DD': {done,plan,minutes,feelings,swaps,extra} }
+let pain = store.get('pp_pain',{});   // { 'YYYY-MM-DD': {neck,back} }
+let meta = store.get('pp_meta',{resetAt:0}); // resetAt：清空数据的时间戳，用于跨设备同步删除
+const persist = ()=>{store.set('pp_logs',logs);store.set('pp_pain',pain);store.set('pp_meta',meta)};
+const saveAll = ()=>{persist();scheduleSync()};
+
+/* ============================================================
+   GitHub 云同步（Contents API → 私有仓库中的一个 JSON 文件）
+   合并规则：按日期逐条比较 _t（修改时间），保留较新的一条；
+   清空数据时记录 resetAt，早于该时间的记录在所有设备上被丢弃。
+   ============================================================ */
+let cfg = store.get('pp_sync',null);
+let syncing=false, syncAgain=false, syncTimer=null;
+
+const b64enc = s=>{const b=new TextEncoder().encode(s);let bin='';for(let i=0;i<b.length;i+=0x8000)bin+=String.fromCharCode.apply(null,b.subarray(i,i+0x8000));return btoa(bin)};
+const b64dec = s=>{const bin=atob(s.replace(/\s/g,''));const b=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)b[i]=bin.charCodeAt(i);return new TextDecoder().decode(b)};
+const canon = o=>JSON.stringify(o,(k,v)=>v&&typeof v==='object'&&!Array.isArray(v)?Object.keys(v).sort().reduce((a,x)=>(a[x]=v[x],a),{}):v);
+
+function mergeData(a,b){
+  const resetAt=Math.max(a.meta?.resetAt||0,b.meta?.resetAt||0);
+  const m=(x={},y={})=>{const out={};
+    for(const k of new Set([...Object.keys(x),...Object.keys(y)])){
+      const p=x[k],q=y[k],w=!p?q:!q?p:((q._t||0)>(p._t||0)?q:p);
+      if(w&&(resetAt===0||(w._t||0)>resetAt))out[k]=w;
+    }return out};
+  return {version:1,logs:m(a.logs,b.logs),pain:m(a.pain,b.pain),meta:{resetAt}};
+}
+
+function api(method,body){
+  const path=cfg.path.split('/').map(encodeURIComponent).join('/');
+  const q=(method==='GET'&&cfg.branch)?`?ref=${encodeURIComponent(cfg.branch)}`:'';
+  return fetch(`https://api.github.com/repos/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.repo)}/contents/${path}${q}`,{
+    method,cache:'no-store',
+    headers:{Authorization:`Bearer ${cfg.token}`,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28',...(body?{'Content-Type':'application/json'}:{})},
+    body:body?JSON.stringify(body):undefined});
+}
+const httpMsg = s=>({401:'令牌无效或已过期',403:'权限不足（需 Contents 读写）或请求过于频繁',404:'找不到仓库，或令牌未授权该仓库'}[s]||`GitHub 返回错误 ${s}`);
+
+function setSync(state,msg){
+  const color={off:'text-sage-500',busy:'text-sage-500',ok:'text-sage-600',err:'text-clay'}[state];
+  const badge={off:'☁️ 未开启同步',busy:'☁️ 同步中…',ok:'☁️ 已同步',err:'⚠️ 同步失败'}[state];
+  const st=document.getElementById('syncStatus'), bd=document.getElementById('syncBadge');
+  if(st){st.textContent=msg;st.className='text-xs '+color}
+  if(bd){bd.textContent=badge;bd.className='text-[11px] mt-0.5 '+color}
+}
+
+function scheduleSync(){if(!cfg)return;clearTimeout(syncTimer);syncTimer=setTimeout(()=>{syncTimer=null;syncNow()},1500)}
+
+async function syncNow(attempt=0){
+  if(!cfg)return;
+  if(syncing){syncAgain=true;return}
+  syncing=true;setSync('busy','同步中…');
+  try{
+    let remote={logs:{},pain:{},meta:{resetAt:0}},sha;
+    const r=await api('GET');
+    if(r.status===200){const j=await r.json();sha=j.sha;remote=JSON.parse(b64dec(j.content))}
+    else if(r.status!==404) throw new Error(httpMsg(r.status));
+
+    const before=canon({logs,pain,meta});
+    const merged=mergeData({logs,pain,meta},remote);
+    logs=merged.logs;pain=merged.pain;meta=merged.meta;persist();
+    if(canon({logs,pain,meta})!==before) renderAll();
+
+    if(!sha||canon(merged)!==canon(mergeData(remote,remote))){
+      const body={message:`打卡同步 ${new Date().toISOString()}`,content:b64enc(JSON.stringify(merged,null,1))};
+      if(sha)body.sha=sha; if(cfg.branch)body.branch=cfg.branch;
+      const w=await api('PUT',body);
+      if((w.status===409||w.status===422)&&attempt<2){syncing=false;return syncNow(attempt+1)} // 另一台设备刚写入：重新拉取合并
+      if(!w.ok) throw new Error(httpMsg(w.status));
+    }
+    const t=new Date();store.set('pp_sync_last',t.getTime());
+    setSync('ok',`已同步 ${pad(t.getHours())}:${pad(t.getMinutes())}`);
+  }catch(e){
+    setSync('err',e instanceof TypeError?'网络错误，联网后会自动重试':e.message);
+  }finally{
+    syncing=false;
+    if(syncAgain){syncAgain=false;scheduleSync()}
+  }
+}
+
+const $ = s=>document.querySelector(s);
+const pad = n=>String(n).padStart(2,'0');
+const dkey = (d=new Date())=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const addDays = (d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
+const isWeekend = (d=new Date())=>d.getDay()===0||d.getDay()===6;
+const fmt = s=>`${Math.floor(s/60)}:${pad(s%60)}`;
+const WD = ['日','一','二','三','四','五','六'];
+const mondayOf = d=>{const x=new Date(d);const k=(x.getDay()+6)%7;x.setDate(x.getDate()-k);x.setHours(0,0,0,0);return x};
+
+let selectedPlan = isWeekend() ? 'weekend' : 'weekday';
+
+function streak(){
+  let d=new Date(), n=0;
+  if(!logs[dkey(d)]?.done) d=addDays(d,-1);
+  while(logs[dkey(d)]?.done){n++;d=addDays(d,-1)}
+  return n;
+}
+
+/* ============================================================
+   今日页
+   ============================================================ */
+function renderHome(){
+  const now=new Date();
+  $('#todayLabel').textContent=`${now.getMonth()+1}月${now.getDate()}日 · 星期${WD[now.getDay()]}`;
+  $('#streakTop').textContent=streak();
+  const p=PLANS[selectedPlan], done=logs[dkey()]?.done;
+  const other = selectedPlan==='weekday'?'weekend':'weekday';
+  $('#planCard').innerHTML=`
+    <div class="flex items-start justify-between gap-3">
+      <div>
+        <p class="text-xs text-sage-500">今日计划${done?' · <span class="text-sage-600 font-medium">已打卡 ✓</span>':''}</p>
+        <h2 class="text-lg font-bold">${p.title}</h2>
+      </div>
+      <button id="switchPlan" class="text-xs text-sage-600 underline shrink-0">切换为 ${PLANS[other].minutes} 分钟版</button>
+    </div>
+    <ol class="mt-4 space-y-2">
+      ${p.items.map(([id,s],i)=>`
+        <li class="flex items-center gap-3">
+          <span class="w-6 h-6 rounded-full bg-sage-100 text-sage-700 text-xs flex items-center justify-center shrink-0">${i+1}</span>
+          <span class="flex-1 text-sm">${EX[id].name}${EX[id].alt?' <span class="text-[10px] text-clay border border-clay/40 rounded px-1 ml-1">有低强度备选</span>':''}</span>
+          <span class="text-xs text-sage-500 tabular-nums">${fmt(s)}</span>
+        </li>`).join('')}
+    </ol>
+    <button id="startBtn" class="btn bg-sage-600 hover:bg-sage-700 text-white w-full mt-5 text-base">${done?'再练一次':'开始今日训练'} ▶</button>`;
+  $('#switchPlan').onclick=()=>{selectedPlan=other;renderHome()};
+  $('#startBtn').onclick=()=>startSession(selectedPlan);
+
+  const mon=mondayOf(now);
+  $('#weekStrip').innerHTML=[...Array(7)].map((_,i)=>{
+    const d=addDays(mon,i),k=dkey(d),isT=k===dkey(),ok=logs[k]?.done,we=isWeekend(d);
+    return `<div class="rounded-xl py-2 text-center ${isT?'ring-2 ring-sage-400':''} ${ok?'bg-sage-500 text-white':we?'bg-sand':'bg-sage-50'}">
+      <p class="text-[11px] opacity-80">${WD[d.getDay()]}</p>
+      <p class="text-sm font-bold">${d.getDate()}</p>
+      <p class="text-[10px] opacity-80">${ok?'✓':we?'30′':'10′'}</p></div>`}).join('');
+
+  const t=pain[dkey()];
+  $('#morningCard').innerHTML=`
+    <div class="flex items-center justify-between mb-1">
+      <h2 class="font-bold">晨起疼痛评分</h2>
+      <span class="text-xs ${t?'text-sage-600':'text-clay'}">${t?'今日已记录 ✓':'今日未记录'}</span>
+    </div>
+    <p class="text-xs text-sage-500 mb-4">0 = 不痛 · 10 = 最痛。建议每天起床后同一时间记录</p>
+    ${['neck','back'].map(k=>`
+      <div class="mb-4">
+        <div class="flex justify-between text-sm mb-1"><span>${k==='neck'?'🦒 肩颈':'🧘 腰部'}</span><span class="font-bold tabular-nums" id="v-${k}">${t?t[k]:0}</span></div>
+        <input type="range" min="0" max="10" step="1" value="${t?t[k]:0}" id="r-${k}">
+      </div>`).join('')}
+    <button id="savePain" class="btn bg-sage-100 text-sage-700 w-full">${t?'更新评分':'保存评分'}</button>`;
+  ['neck','back'].forEach(k=>{$('#r-'+k).oninput=e=>$('#v-'+k).textContent=e.target.value});
+  $('#savePain').onclick=()=>{
+    pain[dkey()]={neck:+$('#r-neck').value,back:+$('#r-back').value,_t:Date.now()};saveAll();renderHome();toast('已保存晨起评分');
+  };
+}
+
+/* ============================================================
+   训练会话
+   ============================================================ */
+let S=null, ticker=null, audioCtx=null, wakeLock=null;
+const CIRC=326.73;
+
+function beep(freq=660,dur=.15){
+  try{
+    audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+    o.frequency.value=freq;g.gain.value=.08;o.connect(g);g.connect(audioCtx.destination);
+    o.start();o.stop(audioCtx.currentTime+dur);
+  }catch(e){}
+  if(navigator.vibrate) navigator.vibrate(80);
+}
+async function keepAwake(on){
+  try{
+    if(on&&'wakeLock' in navigator) wakeLock=await navigator.wakeLock.request('screen');
+    else if(!on&&wakeLock){await wakeLock.release();wakeLock=null}
+  }catch(e){}
+}
+
+function startSession(planKey){
+  beep(0.1,0.01);
+  const p=PLANS[planKey];
+  S={planKey,items:p.items.map(([id,sec])=>({id,sec,useAlt:false})),idx:0,remaining:p.items[0][1],running:false,endAt:0,lastBeep:null};
+  $('#session').classList.remove('hidden');document.body.style.overflow='hidden';
+  renderSession();play();keepAwake(true);
+}
+const curEx=()=>{const it=S.items[S.idx];return EX[it.useAlt?EX[it.id].alt:it.id]};
+function elapsed(){
+  let e=0;for(let i=0;i<S.idx;i++)e+=S.items[i].sec;
+  return e+(S.items[S.idx].sec-S.remaining);
+}
+function renderSession(){
+  const it=S.items[S.idx], ex=curEx(), total=S.items.reduce((a,b)=>a+b.sec,0);
+  $('#sessStep').textContent=`${S.idx+1} / ${S.items.length}`;
+  $('#sessTotal').textContent=`剩余 ${fmt(total-elapsed())}`;
+  $('#sessBar').style.width=(elapsed()/total*100)+'%';
+  $('#exName').textContent=ex.name;
+  $('#exEquip').textContent='器械：'+ex.equip;
+  $('#exCues').innerHTML=ex.cues.map(c=>`<li>${c}</li>`).join('');
+  $('#exAnat').textContent=ex.anatomy;
+  const ab=$('#altBtn');
+  if(EX[it.id].alt){ab.classList.remove('hidden');ab.textContent=it.useAlt?'↩ 换回标准动作':'🩹 腰不舒服？换低强度动作';ab.classList.toggle('on',it.useAlt)}
+  else ab.classList.add('hidden');
+  const nx=S.items[S.idx+1];
+  $('#nextUp').textContent=nx?`下一个：${EX[nx.useAlt?EX[nx.id].alt:nx.id].name}`:'最后一个动作，坚持住 🌿';
+  updateClock();
+}
+function updateClock(){
+  const it=S.items[S.idx];
+  $('#sessTime').textContent=fmt(Math.max(0,S.remaining));
+  $('#ring').style.strokeDashoffset=CIRC*(1-S.remaining/it.sec);
+  $('#playBtn').textContent=S.running?'❚❚':'▶';
+  $('#sessState').textContent=S.running?'进行中 · 保持呼吸':'已暂停';
+}
+function play(){S.running=true;S.endAt=Date.now()+S.remaining*1000;clearInterval(ticker);ticker=setInterval(tick,250);updateClock()}
+function pause(){S.running=false;clearInterval(ticker);updateClock()}
+function tick(){
+  const r=Math.ceil((S.endAt-Date.now())/1000);
+  if(r!==S.remaining){
+    S.remaining=r;
+    if(r<=3&&r>0&&S.lastBeep!==r){beep(520);S.lastBeep=r}
+    if(r<=0){beep(880,.3);goTo(S.idx+1);return}
+    updateClock();
+    const total=S.items.reduce((a,b)=>a+b.sec,0);
+    $('#sessTotal').textContent=`剩余 ${fmt(total-elapsed())}`;
+    $('#sessBar').style.width=(elapsed()/total*100)+'%';
+  }
+}
+function goTo(i){
+  if(i>=S.items.length){finishSession(true);return}
+  if(i<0)i=0;
+  S.idx=i;S.remaining=S.items[i].sec;S.lastBeep=null;
+  renderSession();if(S.running)play();
+}
+$('#playBtn').onclick=()=>S.running?pause():play();
+$('#nextBtn').onclick=()=>goTo(S.idx+1);
+$('#prevBtn').onclick=()=>goTo(S.idx-1);
+$('#altBtn').onclick=()=>{const it=S.items[S.idx];it.useAlt=!it.useAlt;renderSession()};
+$('#exitBtn').onclick=()=>{
+  if(elapsed()<60){if(confirm('不到 1 分钟，确定退出且不记录吗？')){closeSession()}return}
+  if(confirm('提前结束？已完成的部分会记录为今日打卡（做了就算）。'))finishSession(false);
+};
+function closeSession(){pause();keepAwake(false);$('#session').classList.add('hidden');document.body.style.overflow='';S=null}
+
+let finishData=null, finishSel=new Set();
+function finishSession(full){
+  const mins=Math.max(1,Math.round(elapsed()/60));
+  finishData={plan:S.planKey,minutes:full?PLANS[S.planKey].minutes:mins,full,swaps:S.items.filter(x=>x.useAlt).length};
+  closeSession();
+  finishSel=new Set();
+  $('#finishTitle').textContent=full?'今日训练完成！':'今天也动起来了！';
+  $('#finishSub').textContent=`本次 ${finishData.minutes} 分钟${finishData.swaps?` · 使用了 ${finishData.swaps} 个低强度备选`:''}`;
+  $('#finishChips').innerHTML=Object.entries(FEELINGS).map(([k,f])=>`<button class="chip" data-f="${k}">${f.label}</button>`).join('');
+  $('#finishChips').querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{
+    const k=b.dataset.f;finishSel.has(k)?finishSel.delete(k):finishSel.add(k);b.classList.toggle('on')});
+  $('#finish').classList.remove('hidden');$('#finish').classList.add('flex');
+}
+$('#finishSave').onclick=()=>{
+  const k=dkey(),prev=logs[k]||{};
+  logs[k]={...prev,done:true,plan:finishData.plan,
+    minutes:(prev.minutes||0)+finishData.minutes,
+    feelings:[...new Set([...(prev.feelings||[]),...finishSel])],
+    swaps:(prev.swaps||0)+finishData.swaps,_t:Date.now()};
+  saveAll();
+  $('#finish').classList.add('hidden');$('#finish').classList.remove('flex');
+  renderAll();switchTab('coach');
+  const sel=[...finishSel];
+  $('#coachOut').innerHTML=sel.length?sel.map(f=>card(FEELINGS[f])).join(''):
+    `<div class="card p-5 fade"><p class="font-bold">打卡成功 🌿</p><p class="text-sm mt-1 text-ink/80">连续 ${streak()} 天。稳定比强度更重要，明天见！</p></div>`;
+  window.scrollTo({top:0,behavior:'smooth'});
+};
+
+/* ============================================================
+   教练页
+   ============================================================ */
+function card(r){
+  return `<div class="card p-5 fade ${r.flag?'border-clay/50':''}">
+    <p class="font-bold">${r.flag?'⚠️ ':'💡 '}${r.title}</p>
+    <p class="text-sm mt-2 leading-relaxed text-ink/85">${r.explain}</p>
+    <ul class="text-sm mt-3 space-y-1.5">${r.action.map(a=>`<li class="flex gap-2"><span class="text-sage-500">•</span><span>${a}</span></li>`).join('')}</ul>
+    <p class="text-xs mt-3 p-3 rounded-xl bg-sage-50 text-sage-700 leading-relaxed">📚 依据：${r.evidence}</p>
+  </div>`;
+}
+function renderCoach(){
+  $('#feelChips').innerHTML=Object.entries(FEELINGS).map(([k,f])=>`<button class="chip" data-k="${k}">${f.label}</button>`).join('');
+  $('#faqChips').innerHTML=Object.entries(FAQ).map(([k,f])=>`<button class="chip" data-q="${k}">${f.label}</button>`).join('');
+  $('#feelChips').querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{
+    const k=b.dataset.k,t=dkey();
+    logs[t]=logs[t]||{};logs[t].feelings=[...new Set([...(logs[t].feelings||[]),k])];logs[t]._t=Date.now();saveAll();
+    show(FEELINGS[k])});
+  $('#faqChips').querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>show(FAQ[b.dataset.q]));
+}
+function show(r){$('#coachOut').innerHTML=card(r);$('#coachOut').scrollIntoView({behavior:'smooth',block:'start'})}
+
+/* ============================================================
+   进度页
+   ============================================================ */
+function renderProgress(){
+  const all=Object.entries(logs).filter(([,v])=>v.done);
+  const totalMin=all.reduce((a,[,v])=>a+(v.minutes||0),0);
+  $('#statCards').innerHTML=[
+    ['连续打卡',streak(),'天'],['累计训练',all.length,'次'],['累计时长',totalMin,'分钟']
+  ].map(([l,v,u])=>`<div class="card p-4 text-center"><p class="text-xs text-sage-500">${l}</p><p class="text-2xl font-bold text-sage-700 mt-1">${v}<span class="text-xs font-normal"> ${u}</span></p></div>`).join('');
+
+  const mon=mondayOf(new Date());let tr=0,ex=0;
+  for(let i=0;i<7;i++){const l=logs[dkey(addDays(mon,i))];if(l){tr+=l.minutes||0;ex+=l.extra||0}}
+  const pct=v=>Math.min(100,v/150*100);
+  $('#weekVolume').innerHTML=`
+    <div class="h-4 bg-sage-50 rounded-full overflow-hidden flex">
+      <div class="bg-sage-500 h-full" style="width:${pct(tr)}%"></div>
+      <div class="bg-sage-300 h-full" style="width:${Math.max(0,Math.min(100-pct(tr),pct(ex)))}%"></div>
+    </div>
+    <div class="flex justify-between text-xs mt-1.5 text-ink/70">
+      <span>训练 ${tr} 分钟 + 其他 ${ex} 分钟 = <b>${tr+ex}</b></span><span>目标 150</span>
+    </div>
+    <p class="text-xs text-sage-500 mt-2">注：本计划满额约 110 分钟/周，低于 WHO 建议的 150 分钟，差额建议用推车快走等有氧补足。</p>`;
+
+  renderChart();
+
+  $('#tensCard').innerHTML=`
+    <h2 class="font-bold mb-2">⚡ TENS / EMS 使用建议</h2>
+    <div class="grid md:grid-cols-2 gap-3 text-sm">
+      <div class="p-3 rounded-xl bg-sage-50"><p class="font-medium mb-1">✅ 推荐方式</p>
+        <ul class="space-y-1 text-ink/80"><li>• 时机：练后放松或疼痛明显时</li><li>• 时长：每次 15–30 分钟</li><li>• 强度：从最低起调，“明显但舒适的麻感”</li><li>• 位置：肩颈<b>后侧</b>或腰背疼痛区两侧</li></ul></div>
+      <div class="p-3 rounded-xl bg-sand/60"><p class="font-medium mb-1">⛔ 禁止 / 慎用</p>
+        <ul class="space-y-1 text-ink/80"><li>• 颈前、颈侧（颈动脉窦、喉部）</li><li>• 胸前与背部对穿心脏、头部</li><li>• 破损、麻木皮肤</li><li>• 心脏起搏器、怀孕、癫痫（需医生同意）</li></ul></div>
+    </div>
+    <p class="text-xs mt-3 p-3 rounded-xl bg-sage-50 text-sage-700">📚 证据提示：英国 NICE NG59（2016）腰痛指南明确<b>不推荐</b> TENS 作为腰痛治疗。它可作为短期舒适辅助；EMS 带来的肌肉收缩也不能替代主动训练。真正改善腰痛的主力仍是运动。</p>`;
+
+  const hist=Object.keys({...logs,...pain}).sort().reverse().slice(0,12);
+  $('#history').innerHTML=hist.length?hist.map(k=>{
+    const l=logs[k]||{},p=pain[k];
+    const fl=(l.feelings||[]).map(f=>FEELINGS[f]?.label).filter(Boolean).join('、');
+    return `<div class="flex items-start justify-between gap-3 py-2 border-b border-sand last:border-0">
+      <div><p class="font-medium">${k.slice(5).replace('-','/')} ${l.done?'<span class="text-sage-600">✓ '+(l.minutes||0)+' 分钟</span>':'<span class="text-ink/40">未训练</span>'}${l.extra?` <span class="text-xs text-sage-500">+活动 ${l.extra}′</span>`:''}</p>
+      ${fl?`<p class="text-xs text-ink/60 mt-0.5">${fl}</p>`:''}</div>
+      ${p?`<p class="text-xs text-ink/60 shrink-0">肩颈 ${p.neck} · 腰 ${p.back}</p>`:''}</div>`}).join('')
+    :'<p class="text-ink/50">还没有记录，完成第一次训练吧 🌱</p>';
+}
+
+function renderChart(){
+  const W=600,H=220,L=30,R=12,T=12,B=28,N=14,today=new Date();
+  const days=[...Array(N)].map((_,i)=>addDays(today,i-N+1));
+  const x=i=>L+i*(W-L-R)/(N-1), y=v=>T+(10-v)*(H-T-B)/10;
+  const line=(key,color)=>{
+    let segs=[],cur=[];
+    days.forEach((d,i)=>{const p=pain[dkey(d)];if(p){cur.push([x(i),y(p[key])])}else if(cur.length){segs.push(cur);cur=[]}});
+    if(cur.length)segs.push(cur);
+    return segs.map(s=>`<polyline fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" points="${s.map(p=>p.join(',')).join(' ')}"/>`+
+      s.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="#fffdf8" stroke="${color}" stroke-width="2"/>`).join('')).join('');
+  };
+  const has=days.some(d=>pain[dkey(d)]);
+  $('#chart').innerHTML=`<svg viewBox="0 0 ${W} ${H}" class="w-full h-auto">
+    ${[0,2,4,6,8,10].map(v=>`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="#efe7d8"/><text x="${L-8}" y="${y(v)+4}" font-size="11" text-anchor="end" fill="#86a382">${v}</text>`).join('')}
+    ${days.map((d,i)=>i%2===N%2?'':`<text x="${x(i)}" y="${H-8}" font-size="11" text-anchor="middle" fill="#86a382">${d.getMonth()+1}/${d.getDate()}</text>`).join('')}
+    ${line('neck','#c98b6b')}${line('back','#6b8a67')}
+    ${has?'':`<text x="${W/2}" y="${H/2}" text-anchor="middle" font-size="14" fill="#a7bda3">在「今日」页记录晨起评分后显示趋势</text>`}
+  </svg>`;
+}
+
+document.querySelectorAll('[data-extra]').forEach(b=>b.onclick=()=>{
+  const k=dkey();logs[k]=logs[k]||{};logs[k].extra=(logs[k].extra||0)+ +b.dataset.extra;logs[k]._t=Date.now();saveAll();renderProgress();toast(`已记录 ${b.dataset.extra} 分钟活动`)});
+$('#resetBtn').onclick=()=>{if(confirm(cfg?'确定清空所有打卡与评分数据？已开启同步：云端和其他设备的数据也会一起清空（GitHub 提交历史中仍可找回）。':'确定清空所有打卡与评分数据？此操作不可恢复。')){logs={};pain={};meta={resetAt:Date.now()};saveAll();renderAll();toast('已清空')}};
+
+/* 同步设置 */
+function fillSyncForm(){
+  $('#sOwner').value=cfg?.owner||'';$('#sRepo').value=cfg?.repo||'';
+  $('#sPath').value=cfg?.path||'fitness-data.json';$('#sBranch').value=cfg?.branch||'';
+  $('#sToken').value=cfg?.token||'';
+}
+$('#sSave').onclick=()=>{
+  const c={owner:$('#sOwner').value.trim(),repo:$('#sRepo').value.trim(),path:$('#sPath').value.trim()||'fitness-data.json',branch:$('#sBranch').value.trim(),token:$('#sToken').value.trim()};
+  if(!c.owner||!c.repo||!c.token){toast('请填写用户名、仓库名和令牌');return}
+  cfg=c;store.set('pp_sync',cfg);syncNow();
+};
+$('#sNow').onclick=()=>cfg?syncNow():toast('请先填写同步设置');
+$('#sOff').onclick=()=>{if(confirm('在本设备断开同步并删除保存的令牌？本地和云端数据都会保留。')){cfg=null;try{localStorage.removeItem('pp_sync')}catch(e){}fillSyncForm();setSync('off','未开启')}};
+$('#syncBadge').onclick=()=>{switchTab('progress');setTimeout(()=>$('#syncCard').scrollIntoView({behavior:'smooth'}),50)};
+document.addEventListener('visibilitychange',()=>{
+  if(!cfg)return;
+  if(document.visibilityState==='visible')syncNow();
+  else if(syncTimer){clearTimeout(syncTimer);syncTimer=null;syncNow()}
+});
+window.addEventListener('online',()=>cfg&&syncNow());
+
+/* ============================================================
+   导航与通用
+   ============================================================ */
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach(s=>s.classList.add('hidden'));
+  $('#tab-'+t).classList.remove('hidden');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));
+  if(t==='progress')renderProgress();
+  window.scrollTo({top:0});
+}
+document.querySelectorAll('.nav-btn').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
+
+function toast(msg){
+  const d=document.createElement('div');
+  d.className='fixed left-1/2 -translate-x-1/2 bottom-24 bg-ink text-white text-sm px-4 py-2 rounded-full z-[60] fade';
+  d.textContent=msg;document.body.appendChild(d);setTimeout(()=>d.remove(),1800);
+}
+document.addEventListener('visibilitychange',()=>{if(S&&S.running&&document.visibilityState==='visible')keepAwake(true)});
+
+function renderAll(){renderHome();renderCoach();renderProgress()}
+renderAll();
+fillSyncForm();
+if(cfg)syncNow();else setSync('off','未开启');
+</script>
+</body>
+</html>
